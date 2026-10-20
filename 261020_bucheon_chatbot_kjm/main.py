@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, render_template, request, stream_with_context
 from groq import Groq
 
+import knowledge
+
 # 1. 환경 변수 불러오기 (.env)
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -16,19 +18,28 @@ GROQ_MODEL = "openai/gpt-oss-20b"
 GEMINI_MODEL = "gemini-2.5-flash"
 
 SYSTEM_PROMPT = (
-    "You are 'Bucheon-i', a friendly guide chatbot for Bucheon City, Gyeonggi-do, South Korea. "
-    "Help users with attractions (Bucheon Central Park, Woongjin Playdoci, Korea Manhwa Museum, etc.), "
-    "restaurants, transportation (Subway Lines 1 and 7, Seohae Line), festivals "
-    "(Bucheon International Fantastic Film Festival, etc.), and local living information. "
+    "You are 'Bucheon-i', a friendly tourism guide chatbot for Bucheon City, Gyeonggi-do, South Korea. "
     "Keep answers concise and warm. "
-    "Always reply in Korean, unless the user writes in another language. "
-    "If you are not sure about something, do not guess; "
-    "recommend checking official sources such as the Bucheon City Hall website. "
-    "You may use Markdown (bold, lists) for readability. "
-    "Whenever you mention a specific place, wrap its name like [[Place Name]] "
-    "(e.g. [[한국만화박물관]]) so the UI can turn it into a map link. "
-    "Use the current weather below when it is relevant "
-    "(e.g. suggest indoor places when it rains)."
+    "Always reply in Korean, unless the user writes in another language.\n\n"
+    "Rules for recommending places:\n"
+    "- Recommend ONLY places that appear in the knowledge base below. Never invent places, "
+    "addresses, phone numbers, prices, opening hours, or transport details that are not in the data.\n"
+    "- First infer the user's intent (activity type, indoor/outdoor, companions, season, "
+    "activity level), then pick 2-4 matching places and avoid repeating similar ones.\n"
+    "- For each place give: the reason, what to do there, and what to check before visiting "
+    "(use its 'cautions').\n"
+    "- Opening hours, closed days, fees, reservations, current bloom status and program schedules "
+    "change often: never state them as fact; tell the user to check the official Bucheon tourism "
+    "page (https://www.bucheon.go.kr/site/main/index172).\n"
+    "- If the question is outside the knowledge base, say you do not have that information and "
+    "suggest the Bucheon City Hall website. If the request is too vague, offer 2-4 candidates "
+    "for different tastes or ask one short question.\n"
+    "- Present picks as suggestions that depend on taste, not as the objective 'best'.\n"
+    "- You may use Markdown (bold, lists) for readability.\n"
+    "- Whenever you mention a place from the knowledge base, wrap its exact name like [[Place Name]] "
+    "(e.g. [[한국만화박물관]]) so the UI can turn it into a map link.\n"
+    "- You are given today's weather below. Use it (rain -> indoor places; hot/cold -> shorter "
+    "outdoor time) only when relevant; infer indoor/outdoor from each place's category and description."
 )
 
 MAX_HISTORY = 20  # 서버로 보내는 최근 대화 수 제한
@@ -75,12 +86,13 @@ def get_weather():
         return _weather_cache["data"]
 
 
-def build_system_prompt():
+def build_system_prompt(query):
+    prompt = "\n\n".join([SYSTEM_PROMPT, knowledge.build_context(query)])
     w = get_weather()
-    if not w:
-        return SYSTEM_PROMPT
-    return (f"{SYSTEM_PROMPT}\nCurrent weather in Bucheon: {w['desc']}, {w['temp']}°C "
-            f"(feels like {w['feels']}°C), wind {w['wind']} km/h.")
+    if w:
+        prompt += ("\n\nCurrent weather in Bucheon: " f"{w['desc']}, {w['temp']}°C "
+                   f"(feels like {w['feels']}°C), wind {w['wind']} km/h.")
+    return prompt
 
 
 def stream_groq(messages):
@@ -122,6 +134,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/api/places")
+def places():
+    return jsonify(names=[p["name"] for p in knowledge.PLACES])
+
+
 @app.route("/api/weather")
 def weather():
     w = get_weather()
@@ -141,7 +158,9 @@ def chat():
     if not history:
         return jsonify(error="메시지가 비어 있습니다."), 400
 
-    system_prompt = build_system_prompt()
+    # 최근 사용자 질문(마지막 300자)으로 비슷한 예시 답변을 고른다
+    recent_q = " ".join(m["content"] for m in history if m["role"] == "user")[-300:]
+    system_prompt = build_system_prompt(recent_q)
     messages = [{"role": "system", "content": system_prompt}] + history
 
     def text_response(chunks, provider):

@@ -9,6 +9,8 @@ README.md
 .gitignore
 261020_bucheon_chatbot_kjm/
   main.py            Flask 서버 + Groq/Gemini 호출
+  knowledge.py       지식 데이터 로드 + 프롬프트 컨텍스트 생성
+  data/              부천 관광지 JSON, QA 예시
   templates/         채팅 화면 (index.html)
   static/            style.css, app.js
   requirements.txt   필요 라이브러리
@@ -40,6 +42,13 @@ README.md
 - **지도 연동:** 답변 속 장소명을 카카오맵 검색 링크(📍)로 변환 (API 키 불필요)
 - **날씨 연동:** Open-Meteo로 부천 현재 날씨를 가져와 헤더에 표시하고 프롬프트에 반영 (API 키 불필요)
 - **Gemini 폴백:** Groq가 시작 전에 실패(한도 소진 등)하면 Gemini로 재시도 (답변 하단에 제공자 표시)
+
+## 지식 데이터 (환각 방지)
+- `data/bucheon_places.json`: 부천 관광지 20곳 (설명, 활동, 추천 대상, 주의사항)
+- `data/bucheon_qa_dataset.jsonl`: 질문·답변 예시 20건
+- `knowledge.py`: 매 질문마다 전체 장소 데이터를 프롬프트에 넣고, 질문과 비슷한 예시 답변을 골라 말투 가이드로 첨부
+- 목록에 없는 장소는 추천하지 않고, 운영시간·요금 같은 변동 정보는 공식 안내 확인을 권하도록 지시
+- 장소를 추가하려면 `bucheon_places.json`의 `records`에 같은 형식으로 항목만 추가하면 됩니다.
 
 ## 동작
 - 프론트가 대화 기록을 `/api/chat` 으로 전송 → 서버가 부천 안내 프롬프트 + 현재 날씨를 붙여 Groq(`openai/gpt-oss-20b`)를 스트리밍 호출

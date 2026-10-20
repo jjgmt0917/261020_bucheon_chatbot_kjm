@@ -13,10 +13,25 @@ DOMPurify.addHook("afterSanitizeAttributes", (node) => {
 });
 
 // [[장소명]] -> 카카오맵 검색 링크 (API 키 불필요)
+// [[ ]] 없이 쓴 장소명도 지식 데이터의 이름과 같으면 링크로 바꾼다 (/api/places)
+let placeNames = [];
+let linkRe = /\[\[([^\[\]\n]+?)\]\]/g;
+
+async function loadPlaces() {
+  try {
+    const res = await fetch("/api/places");
+    if (!res.ok) return;
+    placeNames = (await res.json()).names.sort((a, b) => b.length - a.length);
+    const esc = placeNames.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    linkRe = new RegExp("\\[\\[([^\\[\\]\\n]+?)\\]\\]" + (esc.length ? "|(" + esc.join("|") + ")" : ""), "g");
+  } catch (_) { /* 이름 목록이 없어도 [[ ]] 변환은 동작 */ }
+}
+
 function withMapLinks(text) {
-  return text.replace(/\[\[([^\[\]\n]+?)\]\]/g, (_, name) => {
-    const q = encodeURIComponent("부천 " + name.trim());
-    return `[📍 ${name.trim()}](https://map.kakao.com/link/search/${q})`;
+  return text.replace(linkRe, (_, bracketed, plain) => {
+    const name = (bracketed || plain).trim();
+    const q = encodeURIComponent("부천 " + name);
+    return `[📍 ${name}](https://map.kakao.com/link/search/${q})`;
   });
 }
 
@@ -114,3 +129,4 @@ document.getElementById("reset").addEventListener("click", () => {
 
 greet();
 loadWeather();
+loadPlaces();
