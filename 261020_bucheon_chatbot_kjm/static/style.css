@@ -1,10 +1,10 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: #eef2f7; font-family: "Malgun Gothic", system-ui, sans-serif; }
-.chat { max-width: 640px; height: 100vh; margin: 0 auto; display: flex; flex-direction: column; background: #fff; }
-header { padding: 14px 16px; background: #2f6fed; color: #fff; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+.chat { max-width: 640px; min-height: 100vh; margin: 0 auto; display: flex; flex-direction: column; background: #fff; }
+header { padding: 14px 16px; background: #2f6fed; color: #fff; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 10; }
 header small { font-weight: normal; opacity: .85; font-size: .8rem; }
 header button { margin-left: auto; background: rgba(255,255,255,.2); color: #fff; border: 0; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
-.log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.log { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .msg { max-width: 80%; padding: 10px 14px; border-radius: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
 .msg.user { align-self: flex-end; background: #2f6fed; color: #fff; border-bottom-right-radius: 4px; }
 .msg.bot { align-self: flex-start; background: #f0f2f5; color: #222; border-bottom-left-radius: 4px; }
@@ -17,3 +17,18 @@ input { flex: 1; padding: 11px 14px; border: 1px solid #d0d6e0; border-radius: 2
 input:focus { border-color: #2f6fed; }
 form button { background: #2f6fed; color: #fff; border: 0; border-radius: 22px; padding: 0 20px; cursor: pointer; font-size: 1rem; }
 form button:disabled { opacity: .5; cursor: wait; }
+.weather { margin-left: auto; font-size: .8rem; font-weight: normal; background: rgba(255,255,255,.2); border-radius: 12px; padding: 3px 10px; }
+.weather:empty { display: none; }
+header button { margin-left: 0; }
+.msg { white-space: normal; }
+.msg.user { white-space: pre-wrap; }
+.msg p { margin: 0 0 .5em; }
+.msg p:last-child, .msg ul:last-child, .msg ol:last-child { margin-bottom: 0; }
+.msg ul, .msg ol { margin: .3em 0 .5em; padding-left: 1.3em; }
+.msg a { color: #2f6fed; font-weight: bold; text-decoration: none; background: #e8f0ff; border-radius: 8px; padding: 1px 6px; }
+.msg a:hover { text-decoration: underline; }
+.msg code { background: #e4e7ec; padding: 1px 4px; border-radius: 4px; }
+.msg table { border-collapse: collapse; margin: .4em 0; font-size: .9em; }
+.msg th, .msg td { border: 1px solid #d0d6e0; padding: 3px 8px; }
+.msg.bot { overflow-x: auto; }
+.bottom { position: sticky; bottom: 0; background: #fff; }
