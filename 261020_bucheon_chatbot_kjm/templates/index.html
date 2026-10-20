@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>부천이 챗봇</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="chat">
+    <header>🏙️ 부천이 <small>부천시 안내 챗봇</small>
+      <button id="reset" type="button">초기화</button>
+    </header>
+    <div id="log" class="log"></div>
+    <div class="chips">
+      <button type="button">부천 가볼 만한 곳 추천</button>
+      <button type="button">한국만화박물관 알려줘</button>
+      <button type="button">부천 맛집 추천</button>
+    </div>
+    <form id="form">
+      <input id="input" autocomplete="off" placeholder="부천에 대해 물어보세요" autofocus>
+      <button type="submit">전송</button>
+    </form>
+  </main>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
